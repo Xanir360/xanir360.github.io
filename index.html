@@ -237,7 +237,25 @@
             <div class="site-info" dir="rtl">
                 <!-- بهبود هدر برای سئو -->
                 <h1><a href="[cb:blog_full_address]">سیامک کسان</a></h1>
-                <h2>حرفه‌ای در کد، خلاق در طراحی، دقیق در شبکه</h2>
+                <h2><div id="slogan"></div></h2>
+<script>
+        const slogans = [
+            "حرفه‌ای در کد، خلاق در طراحی، دقیق در شبکه",
+            "نه طراحی، نه شبکه؛ فقط راه حل",
+            "خالق تجربه‌های دیجیتال ماندگار"
+        ];
+
+        function showRandomSlogan() {
+            const randomIndex = Math.floor(Math.random() * slogans.length);
+            document.getElementById('slogan').textContent = slogans[randomIndex];
+        }
+
+        // نمایش اولیه یک شعار رندوم
+        showRandomSlogan();
+
+        // (اختیاری) تغییر شعار هر ۵ ثانیه
+        setInterval(showRandomSlogan, 5000);
+    </script>
             </div>
 
             <nav class="hidden">
