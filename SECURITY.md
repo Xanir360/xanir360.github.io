@@ -1,5 +1,6 @@
 # Security Policy
-
+# چی میخوای بدونی؟
+کلی طول کشید بنویسمش اما اخرش firebase فیلتر کرد
 ## Supported Versions
 
 Use this section to tell people about which versions of your project are
