@@ -1,10 +1,8 @@
-
 // ==========================================
-// 🛡️ شبیه‌ساز هوشمند فایربیس (نسخه نهایی و ضد خطا)
+// 🛡️ شبیه‌ساز هوشمند فایربیس (نسخه نهایی - ضد خطا)
 // ==========================================
 
-// جلوگیری از خطای ReferenceError برای کدهای قدیمی
-var firebaseConfig = {}; 
+var firebaseConfig = {}; // جلوگیری از خطای ReferenceError
 
 const firebase = {
     apps: { length: 1 },
@@ -14,11 +12,12 @@ const firebase = {
         const PROXY_URL = "https://xanir360.byethost9.com/api.php";
         
         const createSnapshot = (data) => ({
-            val: () => data || null,
-            key: null,
-            exists: () => data !== null,
+            val: () => data,
+            key: "id",
+            exists: () => data !== null && data !== undefined,
             forEach: (fn) => {
-                if (data) Object.entries(data).forEach(([k, v]) => fn({ val: () => v, key: k }));
+                if (data && typeof data === 'object') 
+                    Object.entries(data).forEach(([k, v]) => fn({ val: () => v, key: k }));
             }
         });
 
@@ -27,25 +26,23 @@ const firebase = {
                 once: async (type, callback) => {
                     try {
                         const res = await fetch(`${PROXY_URL}?path=${path}`);
-                        if (!res.ok) throw new Error("Server Error");
                         const data = await res.json();
                         const snap = createSnapshot(data);
                         if (callback) callback(snap);
                         return snap;
                     } catch (e) {
-                        console.warn(`⚠️ خطا در دریافت مسیر ${path}:`, e.message);
-                        const emptySnap = createSnapshot(null);
-                        if (callback) callback(emptySnap);
-                        return emptySnap; // برگرداندن اسنپ‌شات خالی برای جلوگیری از کرش
+                        console.warn(`⚠️ خطا در مسیر ${path}:`, e.message);
+                        // اگر خطا داد، یک شیء خالی برمی‌گرداند تا کد شما کرش نکند
+                        const errorSnap = createSnapshot({}); 
+                        if (callback) callback(errorSnap);
+                        return errorSnap;
                     }
                 },
                 on: function(type, callback) { this.once(type, callback); },
                 off: () => {},
                 push: async (data) => {
                     const res = await fetch(`${PROXY_URL}?path=${path}`, { 
-                        method: 'POST', 
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(data) 
+                        method: 'POST', body: JSON.stringify(data) 
                     });
                     const resData = await res.json();
                     return { key: resData.name || '', val: () => data };
@@ -59,14 +56,19 @@ const firebase = {
     
     auth: () => ({ 
         onAuthStateChanged: (cb) => {
-            // شبیه‌سازی وضعیت ورود (می‌توانید اطلاعات ادمین خود را اینجا بگذارید)
-            setTimeout(() => cb({ uid: "admin_123", email: "admin@xanir.com", displayName: "ادمین" }), 100);
+            // ایجاد یک کاربر مجازی با اطلاعات کامل برای جلوگیری از خطای profileImage
+            const mockUser = { 
+                uid: "admin_123", 
+                email: "admin@xanir.com", 
+                displayName: "ادمین",
+                profileImage: "https://eramblog.com/img/1713345288_2021441.jpg" // یک عکس پیش‌فرض
+            };
+            setTimeout(() => cb(mockUser), 100);
         },
         signOut: () => Promise.resolve()
     })
 };
 
-// متغیرهای سراسری برای استفاده در تمام فایل‌ها (admin.js, comment.js و غیره)
 window.db = firebase.database();
 const database = window.db;
 // Initialize Firebase
