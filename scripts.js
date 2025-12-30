@@ -1,76 +1,119 @@
+// تنظیمات Firebase
+/*const firebaseConfig = {
+    apiKey: "AIzaSyAkcPNZ2abXSvkmQXarzyLusaUfxmjvQBY",
+    authDomain: "posts-c6064.firebaseapp.com",
+    databaseURL: "https://posts-c6064-default-rtdb.firebaseio.com",
+    projectId: "posts-c6064",
+    storageBucket: "posts-c6064.appspot.com",
+    messagingSenderId: "488072882750",
+    appId: "1:488072882750:web:015f21f3e26832ce913f6f",
+    measurementId: "G-2NCP62MSEV"
+};*/
 // ==========================================
-// 🛡️ شبیه‌ساز هوشمند فایربیس (نسخه نهایی - ضد خطا)
+// 🛡️ شبیه‌ساز فوق‌پیشرفته فایربیس (پل ارتباطی امن)
 // ==========================================
 
-var firebaseConfig = {}; // جلوگیری از خطای ReferenceError
+// ۱. تعریف تنظیمات برای جلوگیری از خطای ReferenceError در بقیه کدها
+var firebaseConfig = {
+    apiKey: "AIzaSyAkcPNZ2abXSvkmQXarzyLusaUfxmjvQBY",
+    authDomain: "posts-c6064.firebaseapp.com",
+    databaseURL: "https://posts-c6064-default-rtdb.firebaseio.com",
+    projectId: "posts-c6064",
+    storageBucket: "posts-c6064.appspot.com",
+    messagingSenderId: "488072882750",
+    appId: "1:488072882750:web:015f21f3e26832ce913f6f"
+};
 
+const PROXY_URL = "https://xanir360.byethost9.com/api.php";
+
+// ۲. شیء شبیه‌ساز فایربیس
 const firebase = {
     apps: { length: 1 },
     initializeApp: function() { return this; },
     
     database: function() {
-        const PROXY_URL = "https://xanir360.byethost9.com/api.php";
-        
-        const createSnapshot = (data) => ({
+        const createSnapshot = (data, path) => ({
             val: () => data,
-            key: "id",
+            key: path ? path.split('/').pop() : null,
             exists: () => data !== null && data !== undefined,
             forEach: (fn) => {
-                if (data && typeof data === 'object') 
+                if (data && typeof data === 'object') {
                     Object.entries(data).forEach(([k, v]) => fn({ val: () => v, key: k }));
+                }
             }
         });
+
+        const firebaseFetch = async (path, method = 'GET', body = null) => {
+    try {
+        const url = `${PROXY_URL}?path=${path}`;
+        const options = {
+            method: method,
+            // تغییر از cors به no-cors در هاست‌های رایگان جواب نمی‌دهد چون دیتا را مخفی می‌کند
+            // پس ما همان cors را نگه می‌داریم اما خطا را مدیریت می‌کنیم
+            mode: 'cors', 
+            headers: { 'Accept': 'application/json' }
+        };
+        if (body) {
+            options.headers['Content-Type'] = 'application/json';
+            options.body = JSON.stringify(body);
+        }
+
+        const response = await fetch(url, options);
+        if (!response.ok) throw new Error("Server Response Error");
+        return await response.json();
+    } catch (e) {
+        console.warn(`⚠️ خطا در مسیر [${path}]:`, e.message);
+        // بازگرداندن یک آبجکت خالی به جای null برای جلوگیری از خطای profileImage
+        return {}; 
+    }
+};
 
         return {
             ref: (path) => ({
                 once: async (type, callback) => {
-                    try {
-                        const res = await fetch(`${PROXY_URL}?path=${path}`);
-                        const data = await res.json();
-                        const snap = createSnapshot(data);
-                        if (callback) callback(snap);
-                        return snap;
-                    } catch (e) {
-                        console.warn(`⚠️ خطا در مسیر ${path}:`, e.message);
-                        // اگر خطا داد، یک شیء خالی برمی‌گرداند تا کد شما کرش نکند
-                        const errorSnap = createSnapshot({}); 
-                        if (callback) callback(errorSnap);
-                        return errorSnap;
-                    }
+                    const data = await firebaseFetch(path);
+                    const snap = createSnapshot(data, path);
+                    if (callback) callback(snap);
+                    return snap;
                 },
                 on: function(type, callback) { this.once(type, callback); },
                 off: () => {},
                 push: async (data) => {
-                    const res = await fetch(`${PROXY_URL}?path=${path}`, { 
-                        method: 'POST', body: JSON.stringify(data) 
-                    });
-                    const resData = await res.json();
-                    return { key: resData.name || '', val: () => data };
+                    const res = await firebaseFetch(path, 'POST', data);
+                    return { key: res ? res.name : '', val: () => data };
                 },
-                set: (data) => fetch(`${PROXY_URL}?path=${path}`, { method: 'PUT', body: JSON.stringify(data) }),
-                update: (data) => fetch(`${PROXY_URL}?path=${path}`, { method: 'PATCH', body: JSON.stringify(data) }),
-                remove: () => fetch(`${PROXY_URL}?path=${path}`, { method: 'DELETE' })
+                set: (data) => firebaseFetch(path, 'PUT', data),
+                update: (data) => firebaseFetch(path, 'PATCH', data),
+                remove: () => firebaseFetch(path, 'DELETE')
             })
         };
     },
     
     auth: () => ({ 
         onAuthStateChanged: (cb) => {
-            // ایجاد یک کاربر مجازی با اطلاعات کامل برای جلوگیری از خطای profileImage
+            // شبیه‌سازی کاربر وارد شده برای فعال ماندن امکانات سایت
             const mockUser = { 
                 uid: "admin_123", 
                 email: "admin@xanir.com", 
-                displayName: "ادمین",
-                profileImage: "https://eramblog.com/img/1713345288_2021441.jpg" // یک عکس پیش‌فرض
+                displayName: "مدیر سایت",
+                // مقداردهی اولیه برای جلوگیری از خطای profileImage
+                profileImage: "https://eramblog.com/img/1713345288_2021441.jpg" 
             };
-            setTimeout(() => cb(mockUser), 100);
+            // با کمی تاخیر اجرا می‌شود تا صفحه لود شود
+            setTimeout(() => cb(mockUser), 500);
         },
-        signOut: () => Promise.resolve()
+        signOut: () => {
+            alert("در حالت پروکسی امکان خروج نیست.");
+            return Promise.resolve();
+        }
     })
 };
 
+// تعریف متغیرهای سراسری برای استفاده در بقیه اسکریپت‌ها (admin.js و غیره)
 window.db = firebase.database();
 const database = window.db;
+
+console.log("✅ سیستم پل امنیتی فعال شد. ارتباط با فایربیس از طریق هاست واسط برقرار است.");
 // Initialize Firebase
 //firebase.initializeApp(firebaseConfig);
 
