@@ -1,14 +1,4 @@
-// تنظیمات Firebase
-/*const firebaseConfig = {
-    apiKey: "AIzaSyAkcPNZ2abXSvkmQXarzyLusaUfxmjvQBY",
-    authDomain: "posts-c6064.firebaseapp.com",
-    databaseURL: "https://posts-c6064-default-rtdb.firebaseio.com",
-    projectId: "posts-c6064",
-    storageBucket: "posts-c6064.appspot.com",
-    messagingSenderId: "488072882750",
-    appId: "1:488072882750:web:015f21f3e26832ce913f6f",
-    measurementId: "G-2NCP62MSEV"
-};*/
+
 // ==========================================
 // 🛡️ شبیه‌ساز فوق‌پیشرفته فایربیس (پل ارتباطی امن)
 // ==========================================
